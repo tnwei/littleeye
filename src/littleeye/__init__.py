@@ -25,7 +25,7 @@ def littleeye(obj: Any, max_depth: int = 3, _current_depth: int = 0) -> str:
         return f"{type(obj).__name__} (max depth reached)"
 
     if NUMPY_AVAILABLE:
-        if isinstance(obj, np.ndarray):
+        if np is not None and isinstance(obj, np.ndarray):
             return _analyze_numpy_array(obj)
         
     if isinstance(obj, list):
@@ -121,19 +121,20 @@ def _analyze_container_contents(container, max_depth: int, current_depth: int) -
     if not container:
         return ""
 
-    # Convert to list for easier analysis
     items = list(container)
 
-    # Check if all items are the same type
-    types = [type(item).__name__ for item in items]
-    type_counts = Counter(types)
+    # Generate more specific descriptions for each item
+    item_descriptions = [_get_simplified_type_description(item) for item in items]
+    type_counts = Counter(item_descriptions)
 
     if len(type_counts) == 1:
-        # Homogeneous container
-        item_type = types[0]
+        # Homogeneous container based on simplified descriptions
+        item_type = item_descriptions[0]
 
-        if NUMPY_AVAILABLE and item_type == "ndarray":
+        if item_type == "numpy array":
             return _analyze_numpy_array_collection(items)
+        elif item_type.startswith("empty"):
+            return f"{item_type}s" # e.g., "empty lists"
         elif item_type in ["list", "tuple", "dict"]:
             # Nested containers - show basic info
             sizes = [len(item) for item in items]
@@ -143,12 +144,9 @@ def _analyze_container_contents(container, max_depth: int, current_depth: int) -
             # Primitive types
             return f"{item_type} objects"
     else:
-        # Heterogeneous container
-        most_common_type, count = type_counts.most_common(1)[0]
-        if count == len(items) - 1:
-            return f"mostly {most_common_type} objects with 1 {_get_other_type(type_counts, most_common_type)}"
-        else:
-            return f"mixed types: {', '.join(f'{count} {typ}' for typ, count in type_counts.most_common())}"
+        # Heterogeneous container based on simplified descriptions
+        # Always use the verbose mixed types output
+        return f"mixed types: {', '.join(f'{count} {typ}' for typ, count in type_counts.most_common())}"
 
 
 def _analyze_numpy_array_collection(arrays: list[Any]) -> str: # Changed type hint to list[Any] for clarity
@@ -237,3 +235,17 @@ def _get_other_type(type_counts: Counter, exclude_type: str) -> str:
         if typ != exclude_type:
             return typ
     return "other"
+
+
+def _get_simplified_type_description(obj: Any) -> str:
+    """Returns a simplified type description for an object."""
+    if isinstance(obj, list):
+        return "empty list" if not obj else "list"
+    elif isinstance(obj, dict):
+        return "empty dict" if not obj else "dict"
+    elif isinstance(obj, tuple):
+        return "empty tuple" if not obj else "tuple"
+    elif NUMPY_AVAILABLE and np is not None and isinstance(obj, np.ndarray):
+        return "numpy array"
+    else:
+        return type(obj).__name__
