@@ -1,9 +1,10 @@
 [project]
 name = "littleeye"
 version = "0.1.0"
-description = "Add your description here"
+description = "Peek into the structure of arbitrary nested Python objects"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-    "numpy>=2.3.1",
-]
+dependencies = []
+
+[project.optional-dependencies]
+numpy = ["numpy>=2"]

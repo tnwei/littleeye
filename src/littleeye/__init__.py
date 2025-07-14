@@ -1,7 +1,12 @@
 from collections import Counter
 from typing import Any
 
-import numpy as np
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    np = None
+    NUMPY_AVAILABLE = False
 
 
 def littleeye(obj: Any, max_depth: int = 3, _current_depth: int = 0) -> str:
@@ -19,15 +24,16 @@ def littleeye(obj: Any, max_depth: int = 3, _current_depth: int = 0) -> str:
     if _current_depth >= max_depth:
         return f"{type(obj).__name__} (max depth reached)"
 
-    # Main type dispatcher
+    if NUMPY_AVAILABLE:
+        if isinstance(obj, np.ndarray):
+            return _analyze_numpy_array(obj)
+        
     if isinstance(obj, list):
         return _analyze_list(obj, max_depth, _current_depth)
     elif isinstance(obj, tuple):
         return _analyze_tuple(obj, max_depth, _current_depth)
     elif isinstance(obj, dict):
         return _analyze_dict(obj, max_depth, _current_depth)
-    elif isinstance(obj, np.ndarray):
-        return _analyze_numpy_array(obj)
     elif isinstance(obj, (int, float, str, bool)):
         return _analyze_primitive(obj)
     else:
@@ -88,7 +94,7 @@ def _analyze_dict(obj: dict, max_depth: int, current_depth: int) -> str:
     return result
 
 
-def _analyze_numpy_array(obj: np.ndarray) -> str:
+def _analyze_numpy_array(obj: Any) -> str: # Changed type hint from np.ndarray to Any
     """Analyze numpy array structure."""
     shape_str = "x".join(map(str, obj.shape))
     dtype_str = str(obj.dtype)
@@ -126,7 +132,7 @@ def _analyze_container_contents(container, max_depth: int, current_depth: int) -
         # Homogeneous container
         item_type = types[0]
 
-        if item_type == "ndarray":
+        if NUMPY_AVAILABLE and item_type == "ndarray":
             return _analyze_numpy_array_collection(items)
         elif item_type in ["list", "tuple", "dict"]:
             # Nested containers - show basic info
@@ -145,9 +151,9 @@ def _analyze_container_contents(container, max_depth: int, current_depth: int) -
             return f"mixed types: {', '.join(f'{count} {typ}' for typ, count in type_counts.most_common())}"
 
 
-def _analyze_numpy_array_collection(arrays: list[np.ndarray]) -> str:
+def _analyze_numpy_array_collection(arrays: list[Any]) -> str: # Changed type hint to list[Any] for clarity
     """Analyze a collection of numpy arrays."""
-    if not arrays:
+    if not NUMPY_AVAILABLE or not arrays:
         return "no arrays"
 
     shapes = [arr.shape for arr in arrays]
@@ -231,37 +237,3 @@ def _get_other_type(type_counts: Counter, exclude_type: str) -> str:
         if typ != exclude_type:
             return typ
     return "other"
-
-
-# Example usage and testing
-if __name__ == "__main__":
-    # Test cases
-
-    # Test 1: List of numpy arrays with same shape
-    test1 = [np.array([1, 2, 3]), np.array([4, 5, 6]), np.array([7, 8, 9])]
-    print("Test 1:")
-    print(littleeye(test1))
-    print()
-
-    # Test 2: Dictionary with sequential keys and variable numpy arrays
-    test2 = {i: np.random.random(i) for i in range(1, 6)}
-    print("Test 2:")
-    print(littleeye(test2))
-    print()
-
-    # Test 3: Mixed container
-    test3 = [1, 2, 3, "hello", [1, 2, 3]]
-    print("Test 3:")
-    print(littleeye(test3))
-    print()
-
-    # Test 4: Large numpy array
-    test4 = np.random.random((128, 64))
-    print("Test 4:")
-    print(littleeye(test4))
-    print()
-
-    # Test 5: Empty containers
-    test5 = {"empty_list": [], "empty_dict": {}, "numbers": [1, 2, 3]}
-    print("Test 5:")
-    print(littleeye(test5))
