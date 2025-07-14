@@ -5,6 +5,13 @@ Peek into the structure of arbitrary nested Python objects
 ```python
 >>> from littleeye import littleeye
 
+>>> print(littleeye(1))
+int: 1
+
+>>> print(littleeye((1231, 'asdsada')))
+tuple with 2 elements
+└─ mixed types: 1 int, 1 str
+
 >>> a = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]
 >>> print(littleeye(a))
 list with 3 elements
