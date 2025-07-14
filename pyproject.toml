@@ -8,3 +8,16 @@ dependencies = []
 
 [project.optional-dependencies]
 numpy = ["numpy>=2"]
+
+[dependency-groups]
+dev = [
+    "numpy>=2.3.1",
+    "pytest>=8.4.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
